@@ -271,9 +271,8 @@ class chat_server:
                     # If we got here, we know that streaming_chat_string is not None.
                     current_message_str = "".join(self.streaming_chat_string_pieces())
 
-                    # Testing to see if getting rid of this stops the token limit problem
-                    # if finish_reason == "length":
-                    #     current_message_str += " [Reached token limit; Type 'continue' to continue answer.]"
+                    if finish_reason == "length":
+                        current_message_str += " [Reached token limit; Type 'continue' to continue answer.]"
 
                     # Update session_messages. We need to make a copy to trigger a
                     # reactive invalidation.
@@ -329,9 +328,11 @@ class chat_server:
             # Count tokens, going backward.
             outgoing_messages: list[ChatMessageEnriched] = []
             tokens_total = self._system_prompt_message()["token_count"]
-            max_tokens = (
-                openai_model_context_limits[self.model()] - N_RESERVE_RESPONSE_TOKENS
-            )
+            # Something is wrong with the max tokens calculations for new models. Will set it manually
+            max_tokens = 16384
+            # max_tokens = (
+            #     # openai_model_context_limits[self.model()] - N_RESERVE_RESPONSE_TOKENS
+            # )
             for message in reversed(session_messages2):
                 if tokens_total + message["token_count"] > max_tokens:
                     break
@@ -367,7 +368,8 @@ class chat_server:
                     stream=True,
                     temperature=self.temperature(),
                     **extra_kwargs,
-                    max_tokens=100,
+                    # max_tokens=100,
+                    max_tokens=1000,  # Trying to increase max tokens everywhere
                 ),
                 throttle=self.throttle(),
             )
