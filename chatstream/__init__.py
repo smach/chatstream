@@ -328,11 +328,9 @@ class chat_server:
             # Count tokens, going backward.
             outgoing_messages: list[ChatMessageEnriched] = []
             tokens_total = self._system_prompt_message()["token_count"]
-            # Something is wrong with the max tokens calculations for new models. Will set it manually
-            max_tokens = 16384
-            # max_tokens = (
-            #     # openai_model_context_limits[self.model()] - N_RESERVE_RESPONSE_TOKENS
-            # )
+            max_tokens = (
+                openai_model_context_limits[self.model()] - N_RESERVE_RESPONSE_TOKENS
+            )
             for message in reversed(session_messages2):
                 if tokens_total + message["token_count"] > max_tokens:
                     break
@@ -368,8 +366,7 @@ class chat_server:
                     stream=True,
                     temperature=self.temperature(),
                     **extra_kwargs,
-                    # max_tokens=100,
-                    max_tokens=1000,  # Trying to increase max tokens everywhere
+                    max_tokens=100,
                 ),
                 throttle=self.throttle(),
             )
