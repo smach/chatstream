@@ -46,16 +46,15 @@ else:
     from openai import AsyncOpenAI
 
 
-
 if sys.version_info < (3, 10):
     from typing_extensions import ParamSpec, TypeGuard
 else:
     from typing import ParamSpec, TypeGuard
 
 
-DEFAULT_MODEL: OpenAiModel = "gpt-3.5-turbo"
+DEFAULT_MODEL: OpenAiModel = "gpt-3.5-turbo-0125"
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
-DEFAULT_TEMPERATURE = 0.7
+DEFAULT_TEMPERATURE = 0.1
 DEFAULT_THROTTLE = 0.1
 
 # Make sure that the query text leaves at least this many tokens for the response. For
@@ -176,12 +175,14 @@ class chat_server:
         text_input_placeholder: str | Callable[[], str] | None = None,
         button_label: str | Callable[[], str] = "Ask",
         throttle: float | Callable[[], float] = DEFAULT_THROTTLE,
-        query_preprocessor: Callable[[str], str]
-        | Callable[[str], Awaitable[str]]
-        | None = None,
-        answer_preprocessor: Callable[[str], ui.TagChild]
-        | Callable[[str], Awaitable[ui.TagChild]]
-        | None = None,
+        query_preprocessor: (
+            Callable[[str], str] | Callable[[str], Awaitable[str]] | None
+        ) = None,
+        answer_preprocessor: (
+            Callable[[str], ui.TagChild]
+            | Callable[[str], Awaitable[ui.TagChild]]
+            | None
+        ) = None,
         debug: bool = False,
     ):
         self.input = input
@@ -223,15 +224,15 @@ class chat_server:
             tuple[ChatCompletionStreaming, ...]
         ] = reactive.Value(tuple())
 
-        self.streaming_chat_string_pieces: reactive.Value[
-            tuple[str, ...]
-        ] = reactive.Value(tuple())
+        self.streaming_chat_string_pieces: reactive.Value[tuple[str, ...]] = (
+            reactive.Value(tuple())
+        )
 
         self._ask_trigger = reactive.Value(0)
 
-        self.session_messages: reactive.Value[
-            tuple[ChatMessageEnriched, ...]
-        ] = reactive.Value(tuple())
+        self.session_messages: reactive.Value[tuple[ChatMessageEnriched, ...]] = (
+            reactive.Value(tuple())
+        )
 
         self.hide_query_ui: reactive.Value[bool] = reactive.Value(False)
 
@@ -259,7 +260,9 @@ class chat_server:
                 if message.choices[0].delta.content is not None:
                     self.streaming_chat_string_pieces.set(
                         (self.streaming_chat_string_pieces())
-                        + (message.choices[0].delta.content,) # convert string to tuple thanks to comma
+                        + (
+                            message.choices[0].delta.content,
+                        )  # convert string to tuple thanks to comma
                     )
 
                 finish_reason = message.choices[0].finish_reason
@@ -267,7 +270,6 @@ class chat_server:
                 if finish_reason in ["stop", "length"]:
                     # If we got here, we know that streaming_chat_string is not None.
                     current_message_str = "".join(self.streaming_chat_string_pieces())
-
 
                     if finish_reason == "length":
                         current_message_str += " [Reached token limit; Type 'continue' to continue answer.]"
@@ -358,13 +360,15 @@ class chat_server:
             aclient = AsyncOpenAI(api_key=self.api_key())
 
             messages: StreamResult[ChatCompletionStreaming] = stream_to_reactive(
-                aclient.chat.completions.create(model=self.model(),
-                messages=outgoing_messages_normalized,
-                stream=True,
-                temperature=self.temperature(),
-                **extra_kwargs,
-                              max_tokens=100),
-                throttle=self.throttle()
+                aclient.chat.completions.create(
+                    model=self.model(),
+                    messages=outgoing_messages_normalized,
+                    stream=True,
+                    temperature=self.temperature(),
+                    **extra_kwargs,
+                    max_tokens=100,
+                ),
+                throttle=self.throttle(),
             )
 
             # Set this to a non-empty tuple (with a blank string), to indicate that
