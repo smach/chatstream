@@ -271,8 +271,9 @@ class chat_server:
                     # If we got here, we know that streaming_chat_string is not None.
                     current_message_str = "".join(self.streaming_chat_string_pieces())
 
-                    if finish_reason == "length":
-                        current_message_str += " [Reached token limit; Type 'continue' to continue answer.]"
+                    # Testing to see if getting rid of this stops the token limit problem
+                    # if finish_reason == "length":
+                    #     current_message_str += " [Reached token limit; Type 'continue' to continue answer.]"
 
                     # Update session_messages. We need to make a copy to trigger a
                     # reactive invalidation.
