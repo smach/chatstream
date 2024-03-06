@@ -20,6 +20,7 @@ OpenAiModel = Literal[
     "gpt-3.5-turbo-1106",
 ]
 
+# Add updated token limits
 openai_model_context_limits: dict[OpenAiModel, int] = {
     "gpt-3.5-turbo": 4096,
     "gpt-3.5-turbo-16k": 16384,
